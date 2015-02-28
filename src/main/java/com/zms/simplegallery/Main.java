@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -30,12 +31,13 @@ public class Main extends ActionBarActivity {
      * 循环Gallery
      */
     private Gallery galleryLoop;
+    private ImageView imgUp;
+    private ImageView imgDown;
 
     /**
      * 3D Gallery
      */
     private Gallery3D gallery3D;
-
     /**
      * HorizontalScrollView Gallery
      */
@@ -68,8 +70,14 @@ public class Main extends ActionBarActivity {
         galleryLoop = (Gallery) findViewById(R.id.galleryLoop);
         galleryLoop.setAdapter(new ImageAdapter(this, images, true));
         galleryLoop.setSpacing(5);
+        // 循环Gallery并非真正的循环，整形数范围:[-2147483648,2147483647]
+        // galleryLoop.setSelection(Integer.MAX_VALUE - 1);
         galleryLoop.setOnItemClickListener(new MyItemOnClickListener());
 
+        imgUp = (ImageView) findViewById(R.id.imgUp);
+        imgUp.setOnClickListener(new MyOnClickListener());
+        imgDown = (ImageView) findViewById(R.id.imgDown);
+        imgDown.setOnClickListener(new MyOnClickListener());
 
         Gallery3DAdapter gallery3DAdapter = new Gallery3DAdapter(this, images);
         gallery3DAdapter.createReflectedImages(); // 创建倒影效果
@@ -95,6 +103,25 @@ public class Main extends ActionBarActivity {
         if (imageFiles != null) {
             for (File file : imageFiles) {
                 hsvGalleryFromSD.addView(insertPhoto(file.getAbsolutePath()));
+            }
+        }
+    }
+
+    private class MyOnClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            if (v == imgDown) {
+                if (galleryNormal.getSelectedItemPosition() < 5) {
+                    galleryNormal.setSelection(8);
+                } else {
+                    galleryNormal.setSelection(0);
+                }
+            } else if (v == imgUp) {
+                if (galleryLoop.getSelectedItemPosition() < Integer.MAX_VALUE / 2) {
+                    galleryLoop.setSelection(Integer.MAX_VALUE - 1);
+                } else {
+                    galleryLoop.setSelection(0);
+                }
             }
         }
     }
@@ -147,7 +174,7 @@ public class Main extends ActionBarActivity {
         // 常规Gallery和循环Gallery，此函数返回值不同
         public int getCount() {
             if (isLoop) {
-                return Integer.MAX_VALUE;
+                return Integer.MAX_VALUE; // 2147483647
             } else {
                 return imageInteger.length;
             }
