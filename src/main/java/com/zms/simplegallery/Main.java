@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,7 +39,6 @@ public class Main extends ActionBarActivity {
     /**
      * HorizontalScrollView Gallery
      */
-    private static final String tag = "GH";
     private static final String PATH_SDCARD = "/mnt/sdcard";
     private LinearLayout hsvGallery;
     private LinearLayout hsvGalleryFromSD;
@@ -50,52 +48,52 @@ public class Main extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        Integer[] images = {
+                R.drawable.pic_1,
+                R.drawable.pic_2,
+                R.drawable.pic_3,
+                R.drawable.pic_4,
+                R.drawable.pic_5,
+                R.drawable.pic_6,
+                R.drawable.pic_7,
+                R.drawable.pic_8,
+                R.drawable.pic_9
+        };
 
         galleryNormal = (Gallery) findViewById(R.id.galleryNormal);
-        galleryNormal.setAdapter(new ImageAdapter(this));
+        galleryNormal.setAdapter(new ImageAdapter(this, images, false));
         galleryNormal.setSpacing(5); // 条目间距
         galleryNormal.setOnItemClickListener(new MyItemOnClickListener());
 
         galleryLoop = (Gallery) findViewById(R.id.galleryLoop);
-        galleryLoop.setAdapter(new LoopImageAdapter(this));
+        galleryLoop.setAdapter(new ImageAdapter(this, images, true));
         galleryLoop.setSpacing(5);
         galleryLoop.setOnItemClickListener(new MyItemOnClickListener());
 
-        Integer[] images = {R.drawable.pic_1, R.drawable.pic_2,
-                R.drawable.pic_3, R.drawable.pic_4, R.drawable.pic_5,
-                R.drawable.pic_6, R.drawable.pic_7, R.drawable.pic_8};
 
-        Gallery3DAdapter adapter = new Gallery3DAdapter(this, images);
-        adapter.createReflectedImages(); // 创建倒影效果
+        Gallery3DAdapter gallery3DAdapter = new Gallery3DAdapter(this, images);
+        gallery3DAdapter.createReflectedImages(); // 创建倒影效果
         gallery3D = (Gallery3D) this.findViewById(R.id.gallery3d);
         gallery3D.setFadingEdgeLength(0);
         gallery3D.setSpacing(-100);
-        gallery3D.setAdapter(adapter);
+        gallery3D.setAdapter(gallery3DAdapter);
         gallery3D.setOnItemClickListener(new MyItemOnClickListener());
-        gallery3D.setSelection(4);
-
+        gallery3D.setSelection(5 - 1);
 
         hsvGallery = (LinearLayout) findViewById(R.id.hsvGallery);
         hsvGalleryFromSD = (LinearLayout) findViewById(R.id.hsvGalleryFromSD);
 
-        //pic in the drawable
-        Integer[] images2 = {R.drawable.pic_1, R.drawable.pic_2,
-                R.drawable.pic_3, R.drawable.pic_4, R.drawable.pic_5,
-                R.drawable.pic_6, R.drawable.pic_7, R.drawable.pic_8,
-                R.drawable.pic_9};
-
-        for (Integer id : images2) {
+        for (Integer id : images) {
             hsvGallery.addView(insertImage(id));
         }
 
-        //pic in the sdcard
+        // pic in camera
         String targetPath = PATH_SDCARD + "/DCIM/Camera/";
 
         File targetDirector = new File(targetPath);
-        File[] files = targetDirector.listFiles();
-        if (files != null) {
-            Log.d(tag, files.length + "");
-            for (File file : files) {
+        File[] imageFiles = targetDirector.listFiles();
+        if (imageFiles != null) {
+            for (File file : imageFiles) {
                 hsvGalleryFromSD.addView(insertPhoto(file.getAbsolutePath()));
             }
         }
@@ -103,8 +101,7 @@ public class Main extends ActionBarActivity {
 
     private class MyItemOnClickListener implements AdapterView.OnItemClickListener {
         @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position,
-                                long id) {
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             TextView tvHint = (TextView) findViewById(R.id.tvHint);
             if (view == galleryNormal) {
                 int num = position + 1;
@@ -122,18 +119,22 @@ public class Main extends ActionBarActivity {
         }
     }
 
-    // 普通Gallery的Adapter
+    // Gallery的Adapter
     class ImageAdapter extends BaseAdapter {
         private Context context;
+        private Integer[] imageInteger;
+        private boolean isLoop = false;
 
-        public ImageAdapter(Context context) {
+        /**
+         * @param context Context
+         * @param images  图像资源整形数组
+         * @param isLoop  是否是循环Gallery
+         */
+        public ImageAdapter(Context context, Integer[] images, boolean isLoop) {
             this.context = context;
+            this.imageInteger = images;
+            this.isLoop = isLoop;
         }
-
-        private Integer[] imageInteger = {R.drawable.pic_1, R.drawable.pic_2,
-                R.drawable.pic_3, R.drawable.pic_4, R.drawable.pic_5,
-                R.drawable.pic_6, R.drawable.pic_7, R.drawable.pic_8,
-                R.drawable.pic_9};
 
         public Object getItem(int position) {
             return position;
@@ -145,48 +146,22 @@ public class Main extends ActionBarActivity {
 
         // 常规Gallery和循环Gallery，此函数返回值不同
         public int getCount() {
-            return imageInteger.length;
+            if (isLoop) {
+                return Integer.MAX_VALUE;
+            } else {
+                return imageInteger.length;
+            }
         }
 
         public View getView(int position, View convertView, ViewGroup parent) {
             ImageView imageView = new ImageView(context);
-            imageView.setImageResource(imageInteger[position]);
+            if (isLoop) {
+                imageView.setImageResource(imageInteger[position % imageInteger.length]);
+            } else {
+                imageView.setImageResource(imageInteger[position]);
+            }
             imageView.setScaleType(ImageView.ScaleType.FIT_XY); // 显示比例类型
             imageView.setLayoutParams(new Gallery.LayoutParams(100, 100)); //图片大小
-            return imageView;
-        }
-    }
-
-    // 循环Gallery的Adapter
-    class LoopImageAdapter extends BaseAdapter {
-        private Context context;
-
-        public LoopImageAdapter(Context context) {
-            this.context = context;
-        }
-
-        private Integer[] imageInteger = {R.drawable.pic_1, R.drawable.pic_2,
-                R.drawable.pic_3, R.drawable.pic_4, R.drawable.pic_5,
-                R.drawable.pic_6, R.drawable.pic_7, R.drawable.pic_8,
-                R.drawable.pic_9};
-
-        public Object getItem(int position) {
-            return position;
-        }
-
-        public long getItemId(int position) {
-            return position;
-        }
-
-        public int getCount() {
-            return Integer.MAX_VALUE;
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ImageView imageView = new ImageView(context);
-            imageView.setImageResource(imageInteger[position % imageInteger.length]);
-            imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-            imageView.setLayoutParams(new Gallery.LayoutParams(100, 100));
             return imageView;
         }
     }
@@ -204,9 +179,7 @@ public class Main extends ActionBarActivity {
         return layout;
     }
 
-
     private View insertPhoto(String absolutePath) {
-        // TODO Auto-generated method stub
         Bitmap bm = decodeSampleBitmapFromUri(absolutePath, 200, 200);
         LinearLayout layout = new LinearLayout(getApplicationContext());
         layout.setLayoutParams(new LayoutParams(250, 250));
@@ -221,10 +194,8 @@ public class Main extends ActionBarActivity {
         return layout;
     }
 
-
     private Bitmap decodeSampleBitmapFromUri(String absolutePath, int reqWidth, int reqHeight) {
-        // TODO Auto-generated method stub
-        Bitmap bm = null;
+        Bitmap bitmap = null;
 
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
@@ -236,14 +207,13 @@ public class Main extends ActionBarActivity {
 
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
-        bm = BitmapFactory.decodeFile(absolutePath, options);
-        return bm;
+        bitmap = BitmapFactory.decodeFile(absolutePath, options);
+        return bitmap;
     }
 
 
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth,
                                       int reqHeight) {
-        // TODO Auto-generated method stub
         // Raw height and width of image
         final int height = options.outHeight;
         final int width = options.outWidth;
@@ -276,7 +246,6 @@ public class Main extends ActionBarActivity {
         if (id == R.id.action_settings) {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }
